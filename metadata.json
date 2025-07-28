@@ -1,0 +1,6 @@
+{
+  "name": "Clinical Documentation AI Assistant",
+  "description": "An AI-powered tool to assist clinicians. Start by choosing to generate CARF/OMHAS-compliant progress notes or create comprehensive clinical assessments using guided templates.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}

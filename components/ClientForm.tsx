@@ -42,6 +42,7 @@ const defaultProfile: Partial < ClientProfile > = {
     intakeDate: new Date().toISOString().split('T')[0],
     referralSource: '',
     emergencyContact: '',
+    expectedDischargeDate: '',
     presentingProblem: '',
     mbti: '',
     introvertExtrovertScale: 5,
@@ -316,6 +317,7 @@ const ClientForm: React.FC < ClientFormProps > = ({
                 </div>
                 {renderProfileInput('dateOfBirth', 'Date of Birth', 'date')}
                 {renderProfileInput('intakeDate', 'Intake Date', 'date')}
+                {renderProfileInput('expectedDischargeDate', 'Expected Discharge Date', 'date')}
                 {renderProfileInput('contactPhone', 'Contact Phone')}
                 {renderProfileInput('contactEmail', 'Contact Email', 'email')}
                 {renderTextarea('address', 'Address', 2)}

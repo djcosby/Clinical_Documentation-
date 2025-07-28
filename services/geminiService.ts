@@ -1,9 +1,55 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { Client, NoteType, Selections, GeneratedNote, Document, Program, Partner, AssessmentType, AssessmentData, GeneratedAssessment } from "../types";
-import { NOTE_TEMPLATES, INITIAL_ASSESSMENT_SECTIONS, COMPREHENSIVE_ASSESSMENT_SECTIONS } from "../constants";
+import { Client, NoteType, Selections, GeneratedNote, Document, Program, Partner, AssessmentType, AssessmentData, GeneratedAssessment, ClientInfoForAssessment } from "../types";
+import { INITIAL_ASSESSMENT_SECTIONS, COMPREHENSIVE_ASSESSMENT_SECTIONS, DAP_TEMPLATE } from "../constants";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+
+const NOTE_GENERATION_SYSTEM_PROMPT = `You are an expert clinical documentation assistant for behavioral health providers in Ohio. Your purpose is to craft defensible and effective progress notes that are simultaneously a faithful narrative of the clinical encounter and a bulletproof shield against the scrutiny of auditors from Medicaid, CARF, and OMHAS. Your documentation is a fundamental component of the clinical service itself.
+
+**The Guiding Philosophy: Documentation as Stewardship**
+Your notes are a testament to the work providers do in their community. Each note is a brick building the fortress that protects the agency, validates the work, and chronicles the client's path toward their goals.
+
+---
+**Core Traits of a Quality Note (Non-Negotiable Rules)**
+
+**1. The Golden Thread is Visible and Unbroken:**
+You MUST ensure a clear, logical connection from the assessment/diagnosis, through the treatment plan, into every progress note. The intervention described in the note must be a logical action taken to address a specific ISP goal/objective mentioned in the client's profile or session data.
+
+**2. Medical Necessity is Explicitly Stated:**
+Every note MUST justify why the service was necessary for this client on this day. The note must document symptoms, behaviors, or functional impairments that require intervention. Vague statements are unacceptable. The note must justify the time and expense.
+
+**3. The Client's Voice and Participation are Evident:**
+The note must reflect a collaborative process.
+- Use direct quotes from the client's report when powerful and relevant.
+- Describe the client's reaction to interventions (e.g., "Client appeared relieved...", "Client responded by...").
+- Document the client's contribution to the plan ("Client agreed to...").
+
+**4. Language is Objective, Behavioral, and Free of Jargon:**
+The note must paint a clear picture for an outside reader.
+- **Describe, don't label:** Instead of "Client was angry," write "Client spoke in a raised voice, leaned forward, and stated, 'This is unfair!'"
+- **Avoid slang and acronyms:** Write out terms like "Cognitive Behavioral Therapy (CBT)" initially.
+- **Separate fact from interpretation:** Use phrases like "Client reported...", "Clinician observed...", "This presentation is consistent with...".
+
+**5. Be Concise Yet Complete:**
+The note must be long enough to tell the story and justify the service, but not a word longer. Avoid "note cloning" (copying/pasting from previous notes). Each note must be unique to the specific date of service.
+
+---
+**Structure and Language**
+
+**Verbiage:** Use specific, active, and justifiable language.
+- Instead of "Discussed coping skills," use "Clinician educated client on 3 positive self-talk statements..."
+- Instead of "Provided support," use "Clinician validated the client's stated feelings of..."
+
+**Format:** You MUST use the DAP (Data, Assessment, Plan) format. Adhere strictly to this structure.
+
+---
+**Your Task**
+Generate a separate and complete DAP note for EACH client provided. Seamlessly integrate the information from the "Session Information," "Clinician's Observations," and the detailed "Client Information" into the narrative of the DAP note. DO NOT just list the checkbox items or profile data. Use them to inform the descriptive language of the note, creating a rich, cohesive story of the session. If Background Knowledge Documents are provided, use them as a primary reference.
+
+The final output MUST be a valid JSON array, where each object represents a client's note.
+`;
+
 
 function formatClientProfileForPrompt(client: Client, programs: Program[], partners: Partner[]): string {
   const { name, id, profile, programId } = client;
@@ -56,7 +102,7 @@ function formatClientProfileForPrompt(client: Client, programs: Program[], partn
 }
 
 
-function buildPrompt(
+function buildNotePrompt(
   noteType: NoteType,
   clients: Client[],
   programs: Program[],
@@ -67,52 +113,46 @@ function buildPrompt(
 ): string {
   const clientInfo = clients
     .map(c => formatClientProfileForPrompt(c, programs, partners))
-    .join("\n");
+    .join("\n\n");
 
   const selectionDetails = Object.entries(selections.checkboxes)
     .map(([group, checked]) => {
       if (checked.length === 0 && !selections.narratives[group]) return '';
-      const narrativeText = selections.narratives[group] ? `\n  - **Narrative:** ${selections.narratives[group]}` : '';
-      return `- **${group}:** ${checked.join(", ")}${narrativeText}`;
+      const narrativeText = selections.narratives[group] ? `\n  - Narrative on ${group}: ${selections.narratives[group]}` : '';
+      return `- ${group}: ${checked.join(", ")}${narrativeText}`;
     })
+    .filter(Boolean)
     .join("\n");
     
   const documentContext = documents.length > 0 ? `
 **Background Knowledge Documents:**
-You have access to the following documents to improve the quality and accuracy of your output. Refer to this information when relevant, especially for following guidelines from Wiley Treatment Planners or other specific frameworks mentioned.
-
+You have access to the following documents. Refer to this information when relevant.
 ${documents.map(d => `--- Document: ${d.title} ---\n${d.content}`).join('\n\n')}
-
 --- End of Documents ---
 ` : '';
 
+  // Construct the user-facing part of the prompt
   return `
-You are an expert clinical documentation assistant. Your purpose is to help clinicians write CARF/OMHAS-compliant progress notes for ICANOTES, based on Wiley treatment planners. The tone must be strengths-based, recovery-oriented, and professional. You must generate a complete, narrative-style note for each client based on the provided template and information.
-
-**Mission Critical Instructions:**
-1.  Generate a separate and complete note for EACH client provided.
-2.  Strictly adhere to the structure and headings provided in the Note Template for the specified note type.
-3.  Seamlessly integrate the information from "Clinician's Observations" and the detailed "Client Information" into the narrative. DO NOT just list the checkbox items or profile data. Use them to inform the descriptive language of the note, creating a rich, cohesive story of the session.
-4.  If Background Knowledge Documents are provided, you MUST use them as a primary reference to guide the content, structure, and language of the notes.
-5.  The final output MUST be a valid JSON array, where each object represents a client's note.
-
 ${documentContext}
 
-**Note Type to Generate:** ${noteType}
+**Note Type:** ${noteType}
 
-**Session Information:**
-- **Core Session Intervention/Topic:** ${sessionIntervention}
-- **Clinician's Observations (Checkboxes and Narratives):**
-${selectionDetails}
+**Core Session Intervention/Topic:**
+${sessionIntervention}
 
+**Clinician's Observations (Checkboxes and Narratives):**
+${selectionDetails || 'No specific checkbox observations provided.'}
+
+**Client(s) for this Session:**
 ${clientInfo}
 
-**Note Template to Follow:**
-${NOTE_TEMPLATES[noteType]}
+**DAP Note Template to Follow:**
+${DAP_TEMPLATE}
 
-Generate the note(s) now.
+Generate the DAP note(s) now based on all the information provided.
 `;
 }
+
 
 function formatAssessmentDataForPrompt(
     data: AssessmentData, 
@@ -137,13 +177,6 @@ function formatAssessmentDataForPrompt(
     return output;
 }
 
-interface ClientInfoForAssessment {
-    name: string;
-    dateOfBirth: string;
-    dateOfAssessment: string;
-    clinicianName: string;
-}
-
 function buildAssessmentPrompt(
   clientInfo: ClientInfoForAssessment,
   assessmentType: AssessmentType,
@@ -154,6 +187,7 @@ function buildAssessmentPrompt(
 - **Date of Birth:** ${clientInfo.dateOfBirth || 'Not Provided'}
 - **Date of Assessment:** ${clientInfo.dateOfAssessment || 'Not Provided'}
 - **Clinician Name:** ${clientInfo.clinicianName || 'Not Provided'}
+- **Program:** ${clientInfo.programName || 'Not Provided'}
   `;
   const formattedData = formatAssessmentDataForPrompt(assessmentData, assessmentType);
 
@@ -199,13 +233,14 @@ export const generateNotes = async (
       return [];
   }
 
-  const prompt = buildPrompt(noteType, clients, programs, partners, documents, sessionIntervention, selections);
+  const userPrompt = buildNotePrompt(noteType, clients, programs, partners, documents, sessionIntervention, selections);
 
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: prompt,
+      contents: userPrompt,
       config: {
+        systemInstruction: NOTE_GENERATION_SYSTEM_PROMPT,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -222,7 +257,7 @@ export const generateNotes = async (
               },
               note: {
                 type: Type.STRING,
-                description: 'The full, formatted clinical note for the client.',
+                description: 'The full, formatted clinical note for the client, strictly following the DAP (Data, Assessment, Plan) format.',
               },
             },
             required: ["clientId", "clientName", "note"],
@@ -234,7 +269,6 @@ export const generateNotes = async (
     const jsonText = response.text;
     const result = JSON.parse(jsonText) as GeneratedNote[];
     
-    // Gemini might return notes for clients not in the original list, so we filter.
     const clientIds = new Set(clients.map(c => c.id));
     return result.filter(note => clientIds.has(note.clientId));
 

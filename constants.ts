@@ -37,6 +37,8 @@ export const MOCK_CLIENTS: Client[] = [
     name: 'John Doe',
     programId: 'prog-1-1', // Miracle House - Outpatient SUD
     profile: {
+      intakeDate: '2024-05-10',
+      expectedDischargeDate: '2024-11-10',
       stageOfChange: StageOfChange.CONTEMPLATION,
       presentingProblem: 'Major Depressive Disorder, recurrent, moderate.',
       strengths: ['Strong family support', 'History of medication compliance'],
@@ -50,6 +52,8 @@ export const MOCK_CLIENTS: Client[] = [
     name: 'Jane Smith',
     programId: 'prog-1-2', // Miracle House - IOP SUD
     profile: {
+      intakeDate: '2024-03-01',
+      expectedDischargeDate: '2024-09-01',
       stageOfChange: StageOfChange.ACTION,
       presentingProblem: 'Generalized Anxiety Disorder.',
       strengths: ['Highly motivated for change', 'Recently secured part-time employment'],
@@ -62,6 +66,8 @@ export const MOCK_CLIENTS: Client[] = [
     name: 'Alex Johnson',
     programId: 'prog-2-1', // Stairway to Recovery - Outpatient SUD
     profile: {
+      intakeDate: '2023-11-15',
+      expectedDischargeDate: '2024-08-15',
       stageOfChange: StageOfChange.MAINTENANCE,
       presentingProblem: 'Opioid Use Disorder, in sustained remission.',
       strengths: ['Actively engaged in 12-step community', 'Strong relapse prevention skills'],
@@ -74,6 +80,8 @@ export const MOCK_CLIENTS: Client[] = [
     name: 'Emily White',
     programId: 'prog-7-1', // Reach One Clinical Services - Outpatient SUD
     profile: {
+      intakeDate: '2024-06-20',
+      expectedDischargeDate: '2024-12-20',
       stageOfChange: StageOfChange.PRECONTEMPLATION,
       presentingProblem: 'Bipolar I Disorder, current episode depressed. Mandated to treatment.',
       strengths: ['Artistic and creative', 'Has a supportive partner'],
@@ -86,6 +94,8 @@ export const MOCK_CLIENTS: Client[] = [
     name: 'Michael Brown',
     programId: 'prog-3-3', // DJ's Peer Support - Peer Support Only
     profile: {
+      intakeDate: '2024-07-01',
+      expectedDischargeDate: '2025-01-01',
       stageOfChange: StageOfChange.PREPARATION,
       presentingProblem: 'Alcohol Use Disorder, severe.',
       strengths: ['Intelligent and self-aware'],
@@ -221,104 +231,17 @@ export const PEER_SUPPORT_CHECKBOXES: CheckboxGroup[] = [
     },
 ];
 
+export const DAP_TEMPLATE = `
+**D - Data:**
+(Client's self-report, clinician's observations, and the specific intervention performed. This section is for factual information.)
 
-export const NOTE_TEMPLATES: Record<NoteType, string> = {
-    [NoteType.GROUP]: `
-### Group Therapy Note
+**A - Assessment:**
+(Clinician's professional interpretation of the data, client's response to the intervention, progress towards goals, and risk assessment.)
 
-**Client Participation:**
-(Narrative paragraph describing the client's orientation, mood, thought process, concentration, speech, affect, and interaction with the group and facilitator. Incorporate the clinician's "Participation" selections here.)
+**P - Plan:**
+(Next steps for the client and clinician, and the date/time of the next scheduled appointment.)
+`;
 
-**Response:**
-(Structure this section exactly as follows, filling in the details based on the intervention and client's response selections. Use behavioral terms.)
-Client responded to today's intervention by stating...
-Client continues to struggle with...
-Client continues to demonstrate the need for current level of care by...
-
-**Progress:**
-(Concise statement on whether the client engaged in a way that supports their established treatment goals, informed by the "Progress" selections.)
-
-**Suicidality:**
-(Use the "Risk Assessment" selections. If no risk is checked, default to: "Suicidal ideas or intentions are not in evidence and not expressed. No suicidal plans are present.")
-
-**Plan:**
-(Outline follow-up, referrals, homework, and treatment plan modifications based on the "Plan" selections and narrative.)
-`,
-    [NoteType.INDIVIDUAL]: `
-### Individual Therapy (Counseling) Note
-
-**Location:** Telehealth
-
-**PRESENTING PROBLEM / FOCUS OF SESSION:**
-(Briefly state the primary reason for the session and its main focus, linking it to treatment plan goals.)
-
-**CLIENT REPORT (SUBJECTIVE):**
-(Detail the client's self-report regarding substance use, cravings, mood, treatment engagement, and social supports.)
-
-**CLINICIAN OBSERVATIONS (OBJECTIVE) / MENTAL STATUS EXAM (MSE):**
-(Narrative paragraph describing the client's appearance, behavior, affect, speech, thought process/content, cognitive functioning, and risk assessment, informed by the clinician's checkbox selections.)
-
-**ASSESSMENT & INTERVENTIONS:**
-**Therapy Type(s) Utilized:** (List selected modalities: Motivational Interviewing (MI), Cognitive Behavioral Therapy (CBT), etc.)
-
-**Clinical Assessment Summary:** (Brief synthesis of subjective and objective data.)
-**Specific Interventions Delivered:** (Detail the specific therapeutic actions taken, based on the session intervention provided.)
-**Client's Response to Interventions:** (Describe the client's immediate reaction to the interventions, informed by the "Response to Intervention" selections.)
-
-**PLAN:**
-(Outline the treatment goal focus, next session's plan, homework, coordination of care, and contingency plans, informed by the "Plan" selections.)
-
-**JUSTIFICATION FOR LEVEL OF CARE:**
-(Provide a brief rationale for why the current level of care remains medically necessary based on the client's presentation and progress.)
-`,
-    [NoteType.CASE_MANAGEMENT]: `
-### Case Management Note
-
-**PRESENTING PROBLEM/FOCUS OF SESSION:**
-(Briefly describe the primary reason for the session, linking to case plan goals.)
-
-**CLIENT REPORT (SUBJECTIVE):**
-(Record the client's perspective on substance use, mood, treatment engagement, and concrete needs like housing, employment, or legal matters.)
-
-**CLINICIAN OBSERVATIONS (OBJECTIVE):**
-(A narrative paragraph describing the client's appearance, affect, behavior, speech, thought process, cognitive functioning, and risk, informed by "Participation" and "Risk" selections.)
-
-**INTERVENTIONS/ASSESSMENT:**
-(Describe the specific case management and therapeutic interventions used during the session, informed by the main session intervention description.)
-
-**CLIENT'S RESPONSE TO INTERVENTION:**
-(Briefly note the client's response to the provided interventions, informed by the "Response to Intervention" selections.)
-
-**PLAN:**
-(Outline the plan for continued treatment, including the next session, goals, referrals, and homework, informed by the "Plan" selections.)
-`,
-    [NoteType.PEER_SUPPORT]: `
-### Peer Support SUD Treatment Note
-
-**Session Details & Focus:**
-(Briefly state the main reason for the meeting, linking to recovery goals.)
-
-**Client's Self-Reported State & Peer's Observations:**
-**Client's Check-in / Reported Status:** (Describe the client's self-report on mood, successes, and challenges.)
-**Peer's Observations:** (Describe observable, non-judgmental indicators of the client's engagement and general state.)
-
-**Summary of Interaction & Peer Support Strategies Used:**
-**Key Topics Discussed:** (Detail the main points of the conversation, based on the session intervention.)
-**Peer Support Strategies Implemented:** (List the selected strategies from the checkboxes.)
-**Client Response & Engagement:** (Describe how the client responded to the discussion and strategies.)
-
-**Progress Towards Recovery Goals:**
-**Connection to Recovery/Wellness Plan:** (Link the session content to specific goals in their recovery plan.)
-**Observed Strengths/Progress:** (Note any strengths, resilience, or positive steps demonstrated.)
-**Identified Challenges/Barriers:** (Note any ongoing or new challenges to recovery.)
-
-**Plan & Next Steps:**
-**Client Action Steps:** (List what the client agreed to work on.)
-**Peer Specialist Action Steps:** (List necessary follow-up from the peer specialist.)
-**Next Scheduled Appointment/Contact:** (Note the date and time of next contact.)
-**Coordination of Care:** (Note any necessary communication with the clinical team.)
-`
-};
 
 export const INITIAL_ASSESSMENT_SECTIONS = [
     {

@@ -23,7 +23,7 @@ export enum StageOfChange {
   PREPARATION = 'Preparation',
   ACTION = 'Action',
   MAINTENANCE = 'Maintenance',
-  RELAPSE = 'Relapse/Recurrence',
+  RELAPSE = 'Recurrence',
 }
 
 export type MBTIType =
@@ -43,6 +43,7 @@ export interface ClientProfile {
   intakeDate: string;
   referralSource: string;
   emergencyContact: string;
+  expectedDischargeDate?: string;
   
   // Clinical & Psychosocial Portrait
   presentingProblem: string;
@@ -119,6 +120,14 @@ export interface AssessmentData {
   [sectionId: string]: {
     [fieldId: string]: string;
   };
+}
+
+export interface ClientInfoForAssessment {
+    name: string;
+    dateOfBirth: string;
+    dateOfAssessment: string;
+    clinicianName: string;
+    programName: string;
 }
 
 export interface GeneratedAssessment {
